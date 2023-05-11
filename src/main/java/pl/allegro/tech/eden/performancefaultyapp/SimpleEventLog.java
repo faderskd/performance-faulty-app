@@ -5,19 +5,22 @@ import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class SimpleEventLog implements EventLog {
 
     private static final int MAX_EVENT_SIZE_BYTES = 1024;
-    private static final Path LOG_FILE_PATH = Path.of("/Users/piotr.rzysko/projects/work/performance-faulty-app/data/log.txt");
+    private static final Logger logger = LoggerFactory.getLogger(SimpleEventLog.class);
 
     private final FileChannel fileChannel;
     private final AtomicLong currentOffset = new AtomicLong(0);
 
-    public SimpleEventLog() throws IOException {
+    public SimpleEventLog(EventLogProperties properties) throws IOException {
         fileChannel = FileChannel.open(
-                LOG_FILE_PATH,
+                Path.of(properties.getLogFilePath()),
                 StandardOpenOption.READ,
                 StandardOpenOption.WRITE,
                 StandardOpenOption.CREATE
@@ -57,7 +60,9 @@ public class SimpleEventLog implements EventLog {
         long fileOffset = offset * MAX_EVENT_SIZE_BYTES;
         ByteBuffer buffer = ByteBuffer.allocate(MAX_EVENT_SIZE_BYTES);
         try {
+            long start = System.nanoTime();
             fileChannel.read(buffer, fileOffset);
+            logger.info("Time: {}", TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - start));
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
