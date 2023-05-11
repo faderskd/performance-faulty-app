@@ -11,13 +11,19 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/events")
 public class EventLogEndpoint {
 
+    private final EventLog eventLog;
+
+    public EventLogEndpoint(EventLog eventLog) {
+        this.eventLog = eventLog;
+    }
+
     @PostMapping
     public StoreEventResult store(@RequestBody Event event) {
-        return new StoreEventResult(123);
+        return eventLog.store(event);
     }
 
     @GetMapping("/{offset}")
     public Event get(@PathVariable("offset") long offset) {
-        return new Event("" + offset);
+        return eventLog.get(offset);
     }
 }
