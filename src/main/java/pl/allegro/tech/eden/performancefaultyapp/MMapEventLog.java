@@ -47,17 +47,10 @@ public class MMapEventLog implements EventLog {
 
     @Override
     public Event get(long offset) {
-        long fileOffset = offset * MAX_EVENT_SIZE_BYTES;
-        byte[] buffer = new byte[MAX_EVENT_SIZE_BYTES];
-        map.get((int) fileOffset, buffer);
-        int contentLength = readSize(buffer);
-        return new Event(new String(buffer, Integer.BYTES, contentLength));
-    }
-
-    private static int readSize(byte[] bytes) {
-        return ((bytes[0] & 0xFF) << 24)
-                | ((bytes[1] & 0xFF) << 16)
-                | ((bytes[2] & 0xFF) << 8)
-                | ((bytes[3] & 0xFF));
+        int fileOffset = (int) (offset * MAX_EVENT_SIZE_BYTES);
+        int contentLength = map.getInt(fileOffset);
+        byte[] buffer = new byte[contentLength];
+        map.get(fileOffset + Integer.BYTES, buffer);
+        return new Event(new String(buffer));
     }
 }
