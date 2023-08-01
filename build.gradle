@@ -30,7 +30,6 @@ jmh {
     fork = 1
     warmupIterations = 3
     iterations = 5
-    operationsPerInvocation = 100
     if (getBooleanProperty('jmh.profilersEnabled', false)) {
         if (org.gradle.internal.os.OperatingSystem.current().isLinux()) {
             profilers = [
