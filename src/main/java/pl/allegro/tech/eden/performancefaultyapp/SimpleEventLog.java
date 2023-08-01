@@ -5,7 +5,6 @@ import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -60,9 +59,7 @@ public class SimpleEventLog implements EventLog {
         long fileOffset = offset * MAX_EVENT_SIZE_BYTES;
         ByteBuffer buffer = ByteBuffer.allocate(MAX_EVENT_SIZE_BYTES);
         try {
-            long start = System.nanoTime();
             fileChannel.read(buffer, fileOffset);
-            logger.info("Time: {}", TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - start));
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
