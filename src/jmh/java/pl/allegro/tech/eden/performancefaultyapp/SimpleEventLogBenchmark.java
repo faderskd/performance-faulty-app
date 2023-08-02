@@ -23,17 +23,60 @@ public class SimpleEventLogBenchmark {
     public enum EventLogType {
         Simple {
             @Override
-            public EventLog create(EventLogProperties properties) throws IOException {
-                return new SimpleEventLog(properties);
+            public EventLog create(EventLogProperties properties, EventLogState state) throws IOException {
+                SimpleEventLog eventLog = new SimpleEventLog(properties);
+                for (int i = 0; i < state.numberOfStoredEvents; i++) {
+                    eventLog.store(new Event(state.content));
+                }
+                OS.clearPageCache();
+                OS.printPageCache(properties.getLogFilePath());
+                return eventLog;
+            }
+        },
+        SimpleDirty {
+            @Override
+            public EventLog create(EventLogProperties properties, EventLogState state) throws IOException {
+                SimpleEventLog simpleEventLog = new SimpleEventLog(properties);
+                for (int i = 0; i < state.numberOfStoredEvents; i++) {
+                    simpleEventLog.store(new Event(state.content));
+                }
+                for (int i = 0; i < state.numberOfStoredEvents; i++) {
+                    simpleEventLog.get(i);
+                }
+                OS.printPageCache(properties.getLogFilePath());
+                return simpleEventLog;
             }
         },
         MMap {
             @Override
-            public EventLog create(EventLogProperties properties) throws IOException {
-                return new MMapEventLog(properties);
+            public EventLog create(EventLogProperties properties, EventLogState state) throws IOException {
+                MMapEventLog mMapEventLog = new MMapEventLog(properties);
+                for (int i = 0; i < state.numberOfStoredEvents; i++) {
+                    mMapEventLog.store(new Event(state.content));
+                }
+                OS.clearPageCache();
+                OS.printPageCache(properties.getLogFilePath());
+                return mMapEventLog;
+            }
+        },
+
+        MMapDirty {
+            @Override
+            public EventLog create(EventLogProperties properties, EventLogState state) throws IOException {
+                MMapEventLog mMapEventLog = new MMapEventLog(properties);
+                for (int i = 0; i < state.numberOfStoredEvents; i++) {
+                    mMapEventLog.store(new Event(state.content));
+                }
+                for (int i = 0; i < state.numberOfStoredEvents; i++) {
+                    mMapEventLog.get(i);
+                }
+
+                OS.printPageCache(properties.getLogFilePath());
+                return mMapEventLog;
             }
         };
-        public abstract EventLog create(EventLogProperties properties) throws IOException;
+
+        public abstract EventLog create(EventLogProperties properties, EventLogState state) throws IOException;
     }
 
     @Param
@@ -50,16 +93,13 @@ public class SimpleEventLogBenchmark {
     private final EventLogProperties properties = new EventLogProperties();
     private EventLog eventLog;
 
-    @Setup(Level.Trial)
+    @Setup(Level.Iteration)
     public void setUp(EventLogState state) throws IOException {
         Path path = Path.of(properties.getLogFilePath());
         if (Files.exists(path)) {
             Files.delete(path);
         }
-        eventLog = eventLogType.create(properties);
-        for (int i = 0; i < state.numberOfStoredEvents; i++) {
-            eventLog.store(new Event(state.content));
-        }
+        eventLog = eventLogType.create(properties, state);
     }
 
     @Benchmark

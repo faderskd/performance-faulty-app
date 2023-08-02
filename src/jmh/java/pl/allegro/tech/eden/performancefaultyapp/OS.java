@@ -12,6 +12,9 @@ public class OS {
     public static void clearPageCache() {
         executeAndWait("sudo sync && echo 3 | sudo tee /proc/sys/vm/drop_caches");
     }
+    public static void printPageCache(String file) {
+        executeAndWait("vmtouch " + file);
+    }
 
     public static void executeAndWait(String cmd) {
         try {
