@@ -9,7 +9,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 public class MMapEventLog implements EventLog {
 
-    private static final long MAX_LOG_SIZE_BYTES = 32 * 1024 * 1024;
     private static final int MAX_EVENT_SIZE_BYTES = 1024;
 
     private final MappedByteBuffer map;
@@ -23,7 +22,8 @@ public class MMapEventLog implements EventLog {
                 StandardOpenOption.WRITE,
                 StandardOpenOption.CREATE
         );
-        map = fileChannel.map(FileChannel.MapMode.READ_WRITE, 0, MAX_LOG_SIZE_BYTES);
+        int maxLogSizeInBytes = MAX_EVENT_SIZE_BYTES * properties.getMaxEventCount();
+        map = fileChannel.map(FileChannel.MapMode.READ_WRITE, 0, maxLogSizeInBytes);
     }
 
     @Override
