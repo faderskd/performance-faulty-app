@@ -12,6 +12,8 @@ Vagrant.configure("2") do |config|
   config.vm.network :forwarded_port, guest: 8080, host: 8080
 
   config.vm.provision "shell", path: "vagrant/install-jdk.sh"
+  config.vm.provision "shell", path: "vagrant/install-bcc.sh"
+  config.vm.provision "shell", path: "vagrant/install-async-profiler.sh"
 
   config.vm.provider :virtualbox do |vb|
     vb.customize ["modifyvm", :id, "--memory", "4096"]
