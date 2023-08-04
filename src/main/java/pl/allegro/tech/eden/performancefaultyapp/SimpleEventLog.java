@@ -6,13 +6,10 @@ import java.nio.channels.FileChannel;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.util.concurrent.atomic.AtomicLong;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public class SimpleEventLog implements EventLog {
 
     private static final int MAX_EVENT_SIZE_BYTES = 1024;
-    private static final Logger logger = LoggerFactory.getLogger(SimpleEventLog.class);
 
     private final FileChannel fileChannel;
     private final AtomicLong currentOffset = new AtomicLong(0);
