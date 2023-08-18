@@ -19,7 +19,7 @@ public class EventLogEndpoint {
 
     @PostMapping
     public StoreEventResult store(@RequestBody Event event) {
-        return eventLog.store(event);
+        return eventLog.store(event, true);
     }
 
     @GetMapping("/{offset}")

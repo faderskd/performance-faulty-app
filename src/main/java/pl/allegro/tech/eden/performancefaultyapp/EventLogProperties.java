@@ -5,7 +5,7 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 @ConfigurationProperties(prefix = "event-log")
 public class EventLogProperties {
     private String logFilePath = "log.txt";
-    private int maxEventCount = 1000;
+    private int maxEventCount = 100;
 
     String getLogFilePath() {
         return logFilePath;

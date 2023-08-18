@@ -8,6 +8,7 @@ import java.nio.channels.FileChannel;
 import java.nio.file.FileStore;
 import java.nio.file.Files;
 import java.nio.file.StandardOpenOption;
+import java.util.Objects;
 
 import static com.sun.nio.file.ExtendedOpenOption.DIRECT;
 import static java.nio.file.StandardOpenOption.CREATE;
@@ -20,6 +21,7 @@ public class SuperFastEventLog implements EventLog {
 
     private final MappedByteBuffer map;
     private final FileChannel channel;
+    private final byte[] empty = new byte[PAGE_SIZE_BYTES];
 
     private int activeSegmentIndex;
     private final ByteBuffer activeSegment;
@@ -37,14 +39,15 @@ public class SuperFastEventLog implements EventLog {
         channel = FileChannel.open(logFile.toPath(), CREATE, WRITE, DIRECT);
         FileStore fs = Files.getFileStore(logFile.toPath());
         int alignment = (int) fs.getBlockSize();
-        activeSegmentIndex = 0;
         activeSegment = ByteBuffer
                 .allocateDirect(PAGE_SIZE_BYTES + alignment - 1)
                 .alignedSlice(alignment);
+        setupPosition(properties);
+
     }
 
     @Override
-    public StoreEventResult store(Event event) {
+    public StoreEventResult store(Event event, boolean force) {
         byte[] bytes = event.content().getBytes();
 
         if (bytes.length + Integer.BYTES /* lenght */ > MAX_EVENT_SIZE_BYTES) {
@@ -56,6 +59,7 @@ public class SuperFastEventLog implements EventLog {
             int remaining = activeSegment.remaining();
             if (remaining == 0) {
                 activeSegmentIndex += activeSegment.capacity();
+                activeSegment.put(0, empty);
                 activeSegment.clear();
             }
 
@@ -65,7 +69,7 @@ public class SuperFastEventLog implements EventLog {
             activeSegment.position(PAGE_SIZE_BYTES);
             activeSegment.flip();
             channel.write(activeSegment, activeSegmentIndex);
-            channel.force(true);
+            channel.force(force);
             activeSegment.position(currentPos + MAX_EVENT_SIZE_BYTES);
             offset = ((long) activeSegmentIndex / MAX_EVENT_SIZE_BYTES) + ((long) currentPos / MAX_EVENT_SIZE_BYTES);
         } catch (IOException e) {
@@ -81,5 +85,21 @@ public class SuperFastEventLog implements EventLog {
         byte[] buffer = new byte[contentLength];
         map.get(fileOffset + Integer.BYTES, buffer);
         return new Event(new String(buffer));
+    }
+
+    private void setupPosition(EventLogProperties properties) throws IOException {
+        for (int i = 0; i < properties.getMaxEventCount(); i++) {
+            Event e = get(i);
+            if (Objects.equals(e.content(), "")) {
+                int position = MAX_EVENT_SIZE_BYTES * i;
+                activeSegmentIndex = position - position % PAGE_SIZE_BYTES;
+                byte[] buffer = new byte[position % PAGE_SIZE_BYTES];
+                map.get(activeSegmentIndex, buffer);
+                activeSegment.put(0, buffer);
+                activeSegment.position(buffer.length);
+                channel.position(activeSegmentIndex);
+                break;
+            }
+        }
     }
 }

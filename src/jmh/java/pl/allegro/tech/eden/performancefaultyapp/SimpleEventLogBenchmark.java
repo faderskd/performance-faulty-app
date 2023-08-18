@@ -1,7 +1,6 @@
 package pl.allegro.tech.eden.performancefaultyapp;
 
 import java.io.IOException;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
@@ -26,7 +25,7 @@ public class SimpleEventLogBenchmark {
             public EventLog create(EventLogProperties properties, EventLogState state) throws IOException {
                 SimpleEventLog eventLog = new SimpleEventLog(properties);
                 for (int i = 0; i < state.numberOfStoredEvents; i++) {
-                    eventLog.store(new Event(state.content));
+                    eventLog.store(new Event(state.content), false);
                 }
                 OS.clearPageCache();
                 OS.printPageCache(properties.getLogFilePath());
@@ -38,7 +37,7 @@ public class SimpleEventLogBenchmark {
             public EventLog create(EventLogProperties properties, EventLogState state) throws IOException {
                 SimpleEventLog simpleEventLog = new SimpleEventLog(properties);
                 for (int i = 0; i < state.numberOfStoredEvents; i++) {
-                    simpleEventLog.store(new Event(state.content));
+                    simpleEventLog.store(new Event(state.content), false);
                 }
                 for (int i = 0; i < state.numberOfStoredEvents; i++) {
                     simpleEventLog.get(i);
@@ -52,7 +51,7 @@ public class SimpleEventLogBenchmark {
             public EventLog create(EventLogProperties properties, EventLogState state) throws IOException {
                 MMapEventLog mMapEventLog = new MMapEventLog(properties);
                 for (int i = 0; i < state.numberOfStoredEvents; i++) {
-                    mMapEventLog.store(new Event(state.content));
+                    mMapEventLog.store(new Event(state.content), false);
                 }
                 OS.clearPageCache();
                 OS.printPageCache(properties.getLogFilePath());
@@ -65,7 +64,7 @@ public class SimpleEventLogBenchmark {
             public EventLog create(EventLogProperties properties, EventLogState state) throws IOException {
                 MMapEventLog mMapEventLog = new MMapEventLog(properties);
                 for (int i = 0; i < state.numberOfStoredEvents; i++) {
-                    mMapEventLog.store(new Event(state.content));
+                    mMapEventLog.store(new Event(state.content), false);
                 }
                 for (int i = 0; i < state.numberOfStoredEvents; i++) {
                     mMapEventLog.get(i);
@@ -84,7 +83,7 @@ public class SimpleEventLogBenchmark {
 
     @State(Scope.Thread)
     public static class EventLogState {
-        public int numberOfStoredEvents = 1000;
+        public int numberOfStoredEvents = 1000000;
         public String content = "Hello World";
 
         public int key = ThreadLocalRandom.current().nextInt(1000);
@@ -96,9 +95,9 @@ public class SimpleEventLogBenchmark {
     @Setup(Level.Iteration)
     public void setUp(EventLogState state) throws IOException {
         Path path = Path.of(properties.getLogFilePath());
-        if (Files.exists(path)) {
-            Files.delete(path);
-        }
+//        if (Files.exists(path)) {
+//            Files.delete(path);
+//        }
         eventLog = eventLogType.create(properties, state);
     }
 

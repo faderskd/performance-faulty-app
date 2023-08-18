@@ -19,7 +19,7 @@ public class EventLogTest {
         List<StoreEventResult> storedEvents = new ArrayList<>();
 
         for (int i = 0; i < 10; i++) {
-            StoreEventResult event = eventLog.store(new Event("event" + i));
+            StoreEventResult event = eventLog.store(new Event("event" + i), true);
             storedEvents.add(event);
         }
 

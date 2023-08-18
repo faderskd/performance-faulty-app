@@ -5,7 +5,9 @@ import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
+import java.util.Objects;
 import java.util.concurrent.atomic.AtomicLong;
+import org.apache.catalina.Store;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -24,11 +26,11 @@ public class SimpleEventLog implements EventLog {
                 StandardOpenOption.WRITE,
                 StandardOpenOption.CREATE
         );
-        currentOffset.set(fileChannel.size());
+        setupPosition(properties);
     }
 
     @Override
-    public StoreEventResult store(Event event) {
+    public StoreEventResult store(Event event, boolean force) {
         ByteBuffer buffer = ByteBuffer.allocate(MAX_EVENT_SIZE_BYTES);
         byte[] bytes = event.content().getBytes();
 
@@ -44,14 +46,13 @@ public class SimpleEventLog implements EventLog {
         try {
             fileChannel.position(currentOffset.get());
             fileChannel.write(buffer);
-            fileChannel.force(true);
-            offset = (fileChannel.position() - MAX_EVENT_SIZE_BYTES) / MAX_EVENT_SIZE_BYTES;
+            fileChannel.force(force);
             currentOffset.set(currentOffset.get() + MAX_EVENT_SIZE_BYTES);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
 
-        return new StoreEventResult(offset);
+        return new StoreEventResult(currentOffset.get() / MAX_EVENT_SIZE_BYTES - 1);
     }
 
     @Override
@@ -69,4 +70,16 @@ public class SimpleEventLog implements EventLog {
         buffer.get(bytes);
         return new Event(new String(bytes));
     }
+
+    private void setupPosition(EventLogProperties properties) {
+        for (int i = 0; i < properties.getMaxEventCount(); i++) {
+            Event e = get(i);
+            if (Objects.equals(e.content(), "")) {
+                currentOffset.set((long) i * MAX_EVENT_SIZE_BYTES);
+                break;
+            }
+        }
+    }
 }
+
+// [#, #, #, #, #, #, #, #, #]

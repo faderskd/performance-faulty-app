@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.nio.MappedByteBuffer;
 import java.nio.channels.FileChannel;
 import java.nio.file.StandardOpenOption;
+import java.util.Objects;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class MMapEventLog implements EventLog {
@@ -22,12 +23,14 @@ public class MMapEventLog implements EventLog {
                 StandardOpenOption.WRITE,
                 StandardOpenOption.CREATE
         );
+        currentOffset.set((int) (fileChannel.size() / MAX_EVENT_SIZE_BYTES));
         int maxLogSizeInBytes = MAX_EVENT_SIZE_BYTES * properties.getMaxEventCount();
         map = fileChannel.map(FileChannel.MapMode.READ_WRITE, 0, maxLogSizeInBytes);
+        setupPosition(properties);
     }
 
     @Override
-    public StoreEventResult store(Event event) {
+    public StoreEventResult store(Event event, boolean force) {
         byte[] bytes = event.content().getBytes();
 
         if (bytes.length + Integer.BYTES /* lenght */ > MAX_EVENT_SIZE_BYTES) {
@@ -39,7 +42,9 @@ public class MMapEventLog implements EventLog {
         map.position(offsetInFile);
         map.putInt(bytes.length);
         map.put(bytes);
-        map.force();
+        if (force) {
+            map.force();
+        }
         currentOffset.incrementAndGet();
 
         return new StoreEventResult(eventOffset);
@@ -52,5 +57,15 @@ public class MMapEventLog implements EventLog {
         byte[] buffer = new byte[contentLength];
         map.get(fileOffset + Integer.BYTES, buffer);
         return new Event(new String(buffer));
+    }
+
+    private void setupPosition(EventLogProperties properties) {
+        for (int i = 0; i < properties.getMaxEventCount(); i++) {
+            Event e = get(i);
+            if (Objects.equals(e.content(), "")) {
+                currentOffset.set(i);
+                break;
+            }
+        }
     }
 }
