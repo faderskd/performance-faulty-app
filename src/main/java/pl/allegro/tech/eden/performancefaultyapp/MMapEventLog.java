@@ -7,6 +7,8 @@ import java.nio.channels.FileChannel;
 import java.nio.file.StandardOpenOption;
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicInteger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class MMapEventLog implements EventLog {
 
@@ -14,6 +16,7 @@ public class MMapEventLog implements EventLog {
 
     private final MappedByteBuffer map;
     private final AtomicInteger currentOffset = new AtomicInteger(0);
+    private final Logger logger = LoggerFactory.getLogger(MMapEventLog.class);
 
     public MMapEventLog(EventLogProperties properties) throws IOException {
         File logFile = new File(properties.getLogFilePath());
@@ -60,10 +63,14 @@ public class MMapEventLog implements EventLog {
     }
 
     private void setupPosition(EventLogProperties properties) {
+        if (properties.isWriteFromBegin()) {
+            return;
+        }
         for (int i = 0; i < properties.getMaxEventCount(); i++) {
             Event e = get(i);
             if (Objects.equals(e.content(), "")) {
                 currentOffset.set(i);
+                logger.info("Last offset is {}", i);
                 break;
             }
         }

@@ -12,6 +12,6 @@ public class EventLogConfiguration {
 
     @Bean
     EventLog eventLog(EventLogProperties properties) throws IOException {
-        return new MMapEventLog(properties);
+        return new SuperFastEventLog(properties);
     }
 }

@@ -9,6 +9,8 @@ import java.nio.file.FileStore;
 import java.nio.file.Files;
 import java.nio.file.StandardOpenOption;
 import java.util.Objects;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import static com.sun.nio.file.ExtendedOpenOption.DIRECT;
 import static java.nio.file.StandardOpenOption.CREATE;
@@ -22,6 +24,7 @@ public class SuperFastEventLog implements EventLog {
     private final MappedByteBuffer map;
     private final FileChannel channel;
     private final byte[] empty = new byte[PAGE_SIZE_BYTES];
+    private final Logger logger = LoggerFactory.getLogger(SuperFastEventLog.class);
 
     private int activeSegmentIndex;
     private final ByteBuffer activeSegment;
@@ -88,6 +91,9 @@ public class SuperFastEventLog implements EventLog {
     }
 
     private void setupPosition(EventLogProperties properties) throws IOException {
+        if (properties.isWriteFromBegin()) {
+            return;
+        }
         for (int i = 0; i < properties.getMaxEventCount(); i++) {
             Event e = get(i);
             if (Objects.equals(e.content(), "")) {
@@ -98,6 +104,7 @@ public class SuperFastEventLog implements EventLog {
                 activeSegment.put(0, buffer);
                 activeSegment.position(buffer.length);
                 channel.position(activeSegmentIndex);
+                logger.info("Last offset is {}", i);
                 break;
             }
         }
