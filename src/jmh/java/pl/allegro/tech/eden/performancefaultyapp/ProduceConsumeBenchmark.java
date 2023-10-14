@@ -29,19 +29,19 @@ public class ProduceConsumeBenchmark {
     private static final Logger logger = LoggerFactory.getLogger(ProduceConsumeBenchmark.class);
 
     public enum EventLogType {
-        Simple {
-            @Override
-            public EventLog create(EventLogProperties properties) throws IOException {
-                return new SimpleEventLog(properties);
-            }
-        },
+        //        Simple {
+//            @Override
+//            public EventLog create(EventLogProperties properties) throws IOException {
+//                return new SimpleEventLog(properties);
+//            }
+//        },
         MMap {
             @Override
             public EventLog create(EventLogProperties properties) throws IOException {
                 return new MMapEventLog(properties);
             }
         },
-        SuperFast {
+        Direct {
             @Override
             public EventLog create(EventLogProperties properties) throws IOException {
                 return new SuperFastEventLog(properties);
@@ -79,9 +79,6 @@ public class ProduceConsumeBenchmark {
         writerProperties4.setLogFilePath("/home/vagrant/writer4.txt");
         readerProperties.setWriteFromBegin(true);
 
-        OS.clearPageCache();
-        OS.printPageCache(readerProperties.getLogFilePath());
-
         Stream.of(writerProperties1, writerProperties2, writerProperties3, writerProperties4).forEach(p -> {
             Path path = Path.of(p.getLogFilePath());
             if (Files.exists(path)) {
@@ -99,6 +96,9 @@ public class ProduceConsumeBenchmark {
         writerEventLog2 = eventLogType.create(writerProperties2);
         writerEventLog3 = eventLogType.create(writerProperties3);
         writerEventLog4 = eventLogType.create(writerProperties4);
+
+        OS.clearPageCache();
+        OS.printPageCache(readerProperties.getLogFilePath());
     }
 
     @Benchmark
@@ -113,27 +113,27 @@ public class ProduceConsumeBenchmark {
     @Group("prodconsume")
     @GroupThreads(1)
     public long produce1(EventLogState state) throws InterruptedException {
-        return writerEventLog1.store(EVENT, true).offset();
+        return writerEventLog1.store(EVENT, false).offset();
     }
 
     @Benchmark
     @Group("prodconsume")
     @GroupThreads(1)
     public long produce2(EventLogState state) throws InterruptedException {
-        return writerEventLog2.store(EVENT, true).offset();
+        return writerEventLog2.store(EVENT, false).offset();
     }
 
     @Benchmark
     @Group("prodconsume")
     @GroupThreads(1)
     public long produce3(EventLogState state) throws InterruptedException {
-        return writerEventLog3.store(EVENT, true).offset();
+        return writerEventLog3.store(EVENT, false).offset();
     }
 
     @Benchmark
     @Group("prodconsume")
     @GroupThreads(1)
     public long produce4(EventLogState state) throws InterruptedException {
-        return writerEventLog4.store(EVENT, true).offset();
+        return writerEventLog4.store(EVENT, false).offset();
     }
 }

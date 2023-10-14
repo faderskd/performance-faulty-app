@@ -25,11 +25,13 @@ public class SuperFastEventLog implements EventLog {
     private final FileChannel channel;
     private final byte[] empty = new byte[PAGE_SIZE_BYTES];
     private final Logger logger = LoggerFactory.getLogger(SuperFastEventLog.class);
+    private final EventLogProperties properties;
 
     private int activeSegmentIndex;
     private final ByteBuffer activeSegment;
 
     public SuperFastEventLog(EventLogProperties properties) throws IOException {
+        this.properties = properties;
         File logFile = new File(properties.getLogFilePath());
         FileChannel fileChannel = FileChannel.open(
                 logFile.toPath(),
@@ -73,6 +75,12 @@ public class SuperFastEventLog implements EventLog {
             channel.force(force);
             activeSegment.position(currentPos + MAX_EVENT_SIZE_BYTES);
             offset = ((long) activeSegmentIndex / MAX_EVENT_SIZE_BYTES) + ((long) currentPos / MAX_EVENT_SIZE_BYTES);
+
+            if (offset == properties.getMaxEventCount()) {
+                activeSegment.put(0, empty);
+                activeSegment.clear();
+                activeSegmentIndex = 0;
+            }
         } catch (IOException e) {
             throw new RuntimeException(e);
         }

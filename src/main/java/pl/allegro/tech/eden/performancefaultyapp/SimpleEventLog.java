@@ -17,6 +17,7 @@ public class SimpleEventLog implements EventLog {
     private static final Logger logger = LoggerFactory.getLogger(SimpleEventLog.class);
 
     private final FileChannel fileChannel;
+    private final EventLogProperties properties;
     private final AtomicLong currentOffset = new AtomicLong(0);
 
     public SimpleEventLog(EventLogProperties properties) throws IOException {
@@ -26,6 +27,7 @@ public class SimpleEventLog implements EventLog {
                 StandardOpenOption.WRITE,
                 StandardOpenOption.CREATE
         );
+        this.properties = properties;
         setupPosition(properties);
     }
 
@@ -42,7 +44,6 @@ public class SimpleEventLog implements EventLog {
         buffer.put(bytes);
         buffer.position(0);
 
-        long offset = -1;
         try {
             fileChannel.position(currentOffset.get());
             fileChannel.write(buffer);
@@ -52,7 +53,11 @@ public class SimpleEventLog implements EventLog {
             throw new RuntimeException(e);
         }
 
-        return new StoreEventResult(currentOffset.get() / MAX_EVENT_SIZE_BYTES - 1);
+        long offset = currentOffset.get() / MAX_EVENT_SIZE_BYTES - 1;
+        if (offset == properties.getMaxEventCount()) {
+            currentOffset.set(0);
+        }
+        return new StoreEventResult(offset);
     }
 
     @Override

@@ -5,7 +5,6 @@ import java.io.IOException;
 import java.nio.MappedByteBuffer;
 import java.nio.channels.FileChannel;
 import java.nio.file.StandardOpenOption;
-import java.util.Objects;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -17,8 +16,10 @@ public class MMapEventLog implements EventLog {
     private final MappedByteBuffer map;
     private final AtomicInteger currentOffset = new AtomicInteger(0);
     private final Logger logger = LoggerFactory.getLogger(MMapEventLog.class);
+    private final EventLogProperties properties;
 
     public MMapEventLog(EventLogProperties properties) throws IOException {
+        this.properties = properties;
         File logFile = new File(properties.getLogFilePath());
         FileChannel fileChannel = FileChannel.open(
                 logFile.toPath(),
@@ -26,7 +27,6 @@ public class MMapEventLog implements EventLog {
                 StandardOpenOption.WRITE,
                 StandardOpenOption.CREATE
         );
-        currentOffset.set((int) (fileChannel.size() / MAX_EVENT_SIZE_BYTES));
         int maxLogSizeInBytes = MAX_EVENT_SIZE_BYTES * properties.getMaxEventCount();
         map = fileChannel.map(FileChannel.MapMode.READ_WRITE, 0, maxLogSizeInBytes);
     }
@@ -48,6 +48,9 @@ public class MMapEventLog implements EventLog {
             map.force();
         }
         currentOffset.incrementAndGet();
+        if (currentOffset.get() == properties.getMaxEventCount()) {
+            currentOffset.set(0);
+        }
 
         return new StoreEventResult(eventOffset);
     }
