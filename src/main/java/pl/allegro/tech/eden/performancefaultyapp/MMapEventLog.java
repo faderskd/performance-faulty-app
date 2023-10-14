@@ -29,7 +29,6 @@ public class MMapEventLog implements EventLog {
         currentOffset.set((int) (fileChannel.size() / MAX_EVENT_SIZE_BYTES));
         int maxLogSizeInBytes = MAX_EVENT_SIZE_BYTES * properties.getMaxEventCount();
         map = fileChannel.map(FileChannel.MapMode.READ_WRITE, 0, maxLogSizeInBytes);
-        setupPosition(properties);
     }
 
     @Override
@@ -60,19 +59,5 @@ public class MMapEventLog implements EventLog {
         byte[] buffer = new byte[contentLength];
         map.get(fileOffset + Integer.BYTES, buffer);
         return new Event(new String(buffer));
-    }
-
-    private void setupPosition(EventLogProperties properties) {
-        if (properties.isWriteFromBegin()) {
-            return;
-        }
-        for (int i = 0; i < properties.getMaxEventCount(); i++) {
-            Event e = get(i);
-            if (Objects.equals(e.content(), "")) {
-                currentOffset.set(i);
-                logger.info("Last offset is {}", i);
-                break;
-            }
-        }
     }
 }

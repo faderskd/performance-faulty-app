@@ -45,8 +45,6 @@ public class SuperFastEventLog implements EventLog {
         activeSegment = ByteBuffer
                 .allocateDirect(PAGE_SIZE_BYTES + alignment - 1)
                 .alignedSlice(alignment);
-        setupPosition(properties);
-
     }
 
     @Override
@@ -88,25 +86,5 @@ public class SuperFastEventLog implements EventLog {
         byte[] buffer = new byte[contentLength];
         map.get(fileOffset + Integer.BYTES, buffer);
         return new Event(new String(buffer));
-    }
-
-    private void setupPosition(EventLogProperties properties) throws IOException {
-        if (properties.isWriteFromBegin()) {
-            return;
-        }
-        for (int i = 0; i < properties.getMaxEventCount(); i++) {
-            Event e = get(i);
-            if (Objects.equals(e.content(), "")) {
-                int position = MAX_EVENT_SIZE_BYTES * i;
-                activeSegmentIndex = position - position % PAGE_SIZE_BYTES;
-                byte[] buffer = new byte[position % PAGE_SIZE_BYTES];
-                map.get(activeSegmentIndex, buffer);
-                activeSegment.put(0, buffer);
-                activeSegment.position(buffer.length);
-                channel.position(activeSegmentIndex);
-                logger.info("Last offset is {}", i);
-                break;
-            }
-        }
     }
 }

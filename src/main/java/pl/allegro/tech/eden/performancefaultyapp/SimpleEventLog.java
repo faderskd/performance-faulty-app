@@ -73,17 +73,18 @@ public class SimpleEventLog implements EventLog {
 
     private void setupPosition(EventLogProperties properties) {
         if (properties.isWriteFromBegin()) {
+            logger.info("Starting from offset 0");
             return;
         }
-        for (int i = 0; i < properties.getMaxEventCount(); i++) {
+        int i = 0;
+        while (i < Integer.MAX_VALUE) {
             Event e = get(i);
             if (Objects.equals(e.content(), "")) {
                 currentOffset.set((long) i * MAX_EVENT_SIZE_BYTES);
                 logger.info("Last offset is {}", i);
                 break;
             }
+            i += 1;
         }
     }
 }
-
-// [#, #, #, #, #, #, #, #, #]

@@ -8,11 +8,11 @@ public class EventLogProperties {
     private int maxEventCount = 2000000;
     private boolean writeFromBegin = true;
 
-    String getLogFilePath() {
+    public String getLogFilePath() {
         return logFilePath;
     }
 
-    void setLogFilePath(String logFilePath) {
+    public void setLogFilePath(String logFilePath) {
         this.logFilePath = logFilePath;
     }
 
