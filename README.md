@@ -27,7 +27,7 @@ curl http://localhost:52041/events/1
 # Opis zadania
 
 ### Jak działa benchmark
-Celem tego akapitu jest przybliżenie działania benchmarku, natomiast sam benchmark nie może być modyfikowany.
+Celem tego akapitu jest przybliżenie działania benchmarku. I tylko benchmark nie może być modyfikowany.
 
 ---
 Przeprowadziliśmy benchmark intefrace EventLog za pomocą jmh, którego celem jest zweryfikowanie ilości operacji na milisekundę (ops/ms).
@@ -102,6 +102,6 @@ Iteration   4: 14337.921 ops/ms
 Iteration   5: 14216.340 ops/ms
 ```
 
-Twoim zadaniem jest uzyskanie podobnych rezultatów jak my (+/- 14k ops/ms).
+Twoim zadaniem jest uzyskanie podobnych rezultatów jak my (+/- 14k ops/ms) oraz wyjaśnienie z czego wynika poprawa.
 
 Powodzenia!
